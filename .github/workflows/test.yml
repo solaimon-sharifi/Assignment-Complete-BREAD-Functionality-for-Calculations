@@ -85,9 +85,6 @@ jobs:
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     environment: production
-    env:
-      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}
-      DOCKER_IMAGE: ${{ format('{0}/module14_is601', secrets.DOCKERHUB_USERNAME || github.repository_owner) }}
     steps:
       - uses: actions/checkout@v4
       
@@ -97,13 +94,23 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Resolve Docker image name
+        id: dockerImage
+        run: |
+          owner=${{ secrets.DOCKERHUB_USERNAME }}
+          if [ -z "$owner" ]; then
+            owner=${GITHUB_REPOSITORY_OWNER}
+          fi
+          image="$owner/module14_is601"
+          echo "image=$image" >> "$GITHUB_OUTPUT"
           
       - uses: docker/build-push-action@v5
         with:
           push: true
           tags: |
-            ${{ env.DOCKER_IMAGE }}:latest
-            ${{ env.DOCKER_IMAGE }}:${{ github.sha }}
+            ${{ steps.dockerImage.outputs.image }}:latest
+            ${{ steps.dockerImage.outputs.image }}:${{ github.sha }}
           platforms: linux/amd64,linux/arm64
-          cache-from: type=registry,ref=${{ env.DOCKER_IMAGE }}:cache
+          cache-from: type=registry,ref=${{ steps.dockerImage.outputs.image }}:cache
           cache-to: type=inline,mode=max
