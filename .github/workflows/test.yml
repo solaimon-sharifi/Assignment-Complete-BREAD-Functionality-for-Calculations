@@ -86,7 +86,8 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     env:
-      DOCKER_IMAGE: "${{ secrets.DOCKERHUB_USERNAME }}/module14_is601"
+      DOCKERHUB_USER: ${{ secrets.DOCKERHUB_USERNAME || github.repository_owner }}
+      DOCKER_IMAGE: ${{ format('{0}/module14_is601', secrets.DOCKERHUB_USERNAME || github.repository_owner) }}
     steps:
       - uses: actions/checkout@v4
       
